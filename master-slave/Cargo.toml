@@ -1,0 +1,9 @@
+[package]
+name = "master-slave"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+mpi = { git = "https://github.com/rsmpi/rsmpi.git", rev = "0d04f8d" }
