@@ -72,19 +72,19 @@ fn main() {
             let mut msg = [0u8; 256];
             msg[0..p_bytes.len()].clone_from_slice(p_bytes);
 
-            println!("sending {p:?} to {send_to}");
+            // println!("sending {p:?} to {send_to}");
             let filename = Filename { name: msg };
             world.process_at_rank(send_to).send(&filename);
-            println!("done sending");
+            // println!("done sending");
 
             send_to += 1;
             if send_to == size {
                 send_to = 1;
-                //    for _ in 1..size {
-                //        let (msg, _status) = world.any_process().receive::<Histogram>();
-                //        println!("received image from: {}", _status.source_rank());
-                //        hist = hist.join(msg);
-                //    }
+                for _ in 1..size {
+                    let (msg, _status) = world.any_process().receive::<Histogram>();
+                    // println!("received image from: {}", _status.source_rank());
+                    hist = hist.join(msg);
+                }
             }
         }
 
@@ -105,9 +105,9 @@ fn main() {
     } else {
         // Trabalhador
         loop {
-            println!("{rank}: waiting");
+            // println!("{rank}: waiting");
             let (filename, _status) = world.process_at_rank(0).receive::<Filename>();
-            println!("{rank}: waiting");
+            // println!("{rank}: waiting");
             let Filename { name: msg } = filename;
 
             let zero = msg
@@ -117,22 +117,22 @@ fn main() {
                 .unwrap();
 
             if zero == 0 {
-                println!("BREAKING");
+                // println!("BREAKING");
                 break;
             }
 
-            //let mut hist = Histogram::new();
-            //let filename = String::from_utf8_lossy(&msg[0..zero]).to_string();
-            //println!("{rank}: processing: {filename}");
-            //let img: image::DynamicImage = ImageReader::open(&filename).unwrap().decode().unwrap();
-            //for (_, _, pixel) in img.pixels() {
-            //    hist.r[pixel[0] as usize] += 1;
-            //    hist.g[pixel[1] as usize] += 1;
-            //    hist.b[pixel[2] as usize] += 1;
-            //}
+            let mut hist = Histogram::new();
+            let filename = String::from_utf8_lossy(&msg[0..zero]).to_string();
+            // println!("{rank}: processing: {filename}");
+            let img: image::DynamicImage = ImageReader::open(&filename).unwrap().decode().unwrap();
+            for (_, _, pixel) in img.pixels() {
+                hist.r[pixel[0] as usize] += 1;
+                hist.g[pixel[1] as usize] += 1;
+                hist.b[pixel[2] as usize] += 1;
+            }
 
-            ////world.process_at_rank(0).send(&hist);
-            //println!("{rank}: done processing: {filename}");
+            world.process_at_rank(0).send(&hist);
+            // println!("{rank}: done processing: {filename}");
         }
     }
 }
