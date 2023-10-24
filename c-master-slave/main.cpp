@@ -45,7 +45,7 @@ int main(int argc, char* argv[]){
 	MPI_Init(&argc, &argv);
 	int rank, size;
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	if (size < 2) {
 		std::cerr << "Error: must have at least 2 processes!" << std::endl;
@@ -68,10 +68,15 @@ int main(int argc, char* argv[]){
 			if (send_to == size) {
 				send_to = 1;
 				for (int i = 1; i < size; ++i) {
-					MPI_Recv(&received, 256 * 3, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+					MPI_Recv(&received, 256 * 3, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 					hist.join(received);
 				}
 			}
+		}
+
+		for (int i = send_to; i > 1; --i) {
+			MPI_Recv(&received, 256 * 3, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			hist.join(received);
 		}
 
 		for (int i = 1; i < size; ++i) {
@@ -105,7 +110,7 @@ int main(int argc, char* argv[]){
 				hist.b[blue]++;
 			}
 
-			MPI_Send(&hist, 256 * 3, MPI_INT, 0, 0, MPI_COMM_WORLD);
+			MPI_Send(&hist, 256 * 3, MPI_UNSIGNED, 0, 0, MPI_COMM_WORLD);
 		}
 	}
 
