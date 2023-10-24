@@ -67,20 +67,16 @@ int main(int argc, char* argv[]){
 			++send_to;
 			if (send_to == size) {
 				send_to = 1;
-				for (int i = 1; i < size; ++i) {
-					MPI_Recv(&received, 256 * 3, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-					hist.join(received);
-				}
 			}
-		}
-
-		for (int i = send_to; i > 1; --i) {
-			MPI_Recv(&received, 256 * 3, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-			hist.join(received);
 		}
 
 		for (int i = 1; i < size; ++i) {
 			MPI_Send("\0", 1, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+		}
+
+		for (int i = 1; i < size; ++i) {
+			MPI_Recv(&received, 256 * 3, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			hist.join(received);
 		}
 
 		auto end = std::chrono::high_resolution_clock::now();
@@ -91,6 +87,7 @@ int main(int argc, char* argv[]){
 		int width, height;
 		int numberOfChannels;
 		MPI_Status status;
+		Histogram hist;
 		while (true) {
 			char buf[256] = {0};
 			MPI_Recv(&buf, 256, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
@@ -99,7 +96,6 @@ int main(int argc, char* argv[]){
 				break;
 			}
 
-			Histogram hist;
 			uint8_t *imageData = stbi_load(buf, &width, &height, &numberOfChannels, 0);
 			for (int i = 0; i < width * height * numberOfChannels; i += numberOfChannels) {
 				uint8_t red = imageData[i];
@@ -110,8 +106,8 @@ int main(int argc, char* argv[]){
 				hist.b[blue]++;
 			}
 
-			MPI_Send(&hist, 256 * 3, MPI_UNSIGNED, 0, 0, MPI_COMM_WORLD);
 		}
+		MPI_Send(&hist, 256 * 3, MPI_UNSIGNED, 0, 0, MPI_COMM_WORLD);
 	}
 
 	MPI_Finalize();
