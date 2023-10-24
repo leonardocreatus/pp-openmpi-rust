@@ -1,10 +1,12 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <iostream>
 #include <chrono>
 #include <filesystem>
 #include "string.h"
 
 #include "stb_image.h"
+#include "stb_image_resize2.h"
 
 #include "mpi.h"
 
@@ -97,14 +99,26 @@ int main(int argc, char* argv[]){
 			}
 
 			uint8_t *imageData = stbi_load(buf, &width, &height, &numberOfChannels, 0);
+			uint8_t *resized =  stbir_resize_uint8_srgb(
+					imageData,
+					width,
+					height,
+					numberOfChannels,
+					0,
+					width * 32,
+					height * 32,
+					0,
+					STBIR_RGBA);
 			for (int i = 0; i < width * height * numberOfChannels; i += numberOfChannels) {
-				uint8_t red = imageData[i];
-				uint8_t green = imageData[i + 1];
-				uint8_t blue = imageData[i + 2];
+				uint8_t red = resized[i];
+				uint8_t green = resized[i + 1];
+				uint8_t blue = resized[i + 2];
 				hist.r[red]++;
 				hist.g[green]++;
 				hist.b[blue]++;
 			}
+			std::free(imageData);
+			std::free(resized);
 
 		}
 		MPI_Send(&hist, 256 * 3, MPI_UNSIGNED, 0, 0, MPI_COMM_WORLD);
